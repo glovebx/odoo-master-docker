@@ -71,11 +71,11 @@ RUN apt-get update && \
     && rm -rf /var/lib/apt/lists/* wkhtmltox.deb
 
 # Pip install dependencies
-RUN pip install pyopenssl
-RUN pip install babel
-RUN pip install pyserial
-RUN pip install pytz
-RUN pip install pyusb
+RUN pip3 install pyopenssl
+RUN pip3 install babel
+RUN pip3 install pyserial
+RUN pip3 install pytz
+RUN pip3 install pyusb
 RUN pip3 install -U debugpy
 
 # install latest postgresql-client
