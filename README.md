@@ -17,7 +17,7 @@ create dockerfile from source code for odoo master branch on Mac M1
 &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;odoo.conf  
 &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;wait-for-psql.py  
 4、Open project folder with Visual Studio Code, install docker extension if necessary  
-5、Build odoo image with docker name [odoo16]  
+5、Build odoo image named [odoo16]  
 6、Pull postgres image and run  
 &emsp;&emsp;docker run -d -p 5432:5432 -e POSTGRES_USER=odoo -e POSTGRES_PASSWORD=odoo -e POSTGRES_DB=postgres --name db postgres:13  
 7、Run odoo image  
