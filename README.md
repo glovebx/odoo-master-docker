@@ -1,5 +1,5 @@
 # odoo-master-docker
-create dockerfile from source for odoo master branch on Mac M1
+create dockerfile from source code for odoo master branch on Mac M1
 
 1、Install Docker  
 2、Clone this repository to local  
