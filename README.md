@@ -3,7 +3,23 @@ create dockerfile from source for odoo master branch on Mac M1
 
 1、Install Docker  
 2、Clone this repository to local  
-3、Clone odoo master branch to [odoo] folder  
+3、Clone odoo master branch to [odoo] folder under [odoo-master-docker]  
+&emsp;&emsp;odoo-master-docker--|  
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;odoo  
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;--|  
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;addons  
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;odoo-bin  
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;setup.py  
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;setup.cfg  
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;...  
+&emsp;&emsp;&emsp;&emsp;&emsp;--|  
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Dockerfile  
+&emsp;&emsp;&emsp;&emsp;&emsp;--|  
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;entrypoint.sh  
+&emsp;&emsp;&emsp;&emsp;&emsp;--|  
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;odoo.conf  
+&emsp;&emsp;&emsp;&emsp;&emsp;--|  
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;wait-for-psql.py  
 4、Open project folder with Visual Studio Code, install docker extension if necessary  
 5、Build odoo image with docker name [odoo16]  
 6、Pull postgres image and run  
