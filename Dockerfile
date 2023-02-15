@@ -16,6 +16,10 @@ RUN apt-get update && \
     apt-get update && \
     apt install -y python3.9
 
+# Install vim
+RUN apt-get update && \
+    apt-get install -y vim
+
 # Install some deps, lessc and less-plugin-clean-css, and wkhtmltopdf
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -27,6 +31,7 @@ RUN apt-get update && \
         libssl-dev \
         node-less \
         npm \
+        python3-geoip2 \
         python3-decorator \
         python3-docutils \
         python3-idna \
@@ -71,7 +76,8 @@ RUN apt-get update && \
     && rm -rf /var/lib/apt/lists/* wkhtmltox.deb
 
 # Pip install dependencies
-RUN pip3 install pyopenssl
+RUN pip3 install pyopenssl==22.1.0
+RUN pip3 install cryptography
 RUN pip3 install babel
 RUN pip3 install pyserial
 RUN pip3 install pytz
@@ -105,16 +111,17 @@ COPY ./odoo/ /work/odoo/
 COPY ./entrypoint.sh /
 COPY ./odoo.conf /etc/odoo/
 
-# Make runtime folder(session files etc.)
-RUN mkdir /var/lib/odoo
-
 # Set permissions and Mount /work for source files and /var/lib/odoo to allow restoring filestore and /mnt/extra-addons for users addons
 RUN chown -R odoo /work/odoo \
     && chown odoo /etc/odoo/odoo.conf \
     && mkdir -p /mnt/extra-addons \
     && chown -R odoo /mnt/extra-addons \
+    && mkdir -p /var/lib/odoo \
     && chown -R odoo /var/lib/odoo
 VOLUME ["/work", "/var/lib/odoo", "/mnt/extra-addons"]
+
+COPY ./psycopg2/ /mnt/extra-addons/psycopg2/
+RUN chown -R odoo /mnt/extra-addons
 
 # Expose Odoo services
 # 3000 for debug
