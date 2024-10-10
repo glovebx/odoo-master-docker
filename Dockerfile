@@ -1,10 +1,10 @@
-FROM arm64v8/debian:bullseye-slim
-MAINTAINER Odoo S.A. <info@odoo.com>
+FROM arm64v8/debian:bookworm
+LABEL glovebx=<1069010@qq.com>
 
 SHELL ["/bin/bash", "-xo", "pipefail", "-c"]
 
 # Generate locale C.UTF-8 for postgres and general locale data
-ENV LANG C.UTF-8
+ENV LANG=C.UTF-8
 
 # Create work folder
 RUN mkdir /work/
@@ -14,7 +14,7 @@ WORKDIR /work/
 RUN apt-get update && \
     apt-get install -y software-properties-common && \
     apt-get update && \
-    apt install -y python3.9
+    apt install -y python3.11
 
 # Install vim
 RUN apt-get update && \
@@ -23,14 +23,22 @@ RUN apt-get update && \
 # Install some deps, lessc and less-plugin-clean-css, and wkhtmltopdf
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
+        build-essential \
         ca-certificates \
+        cargo \
         curl \
         dirmngr \
         fonts-noto-cjk \
+        fonts-courier-prime \
         gnupg \
         libssl-dev \
+        libffi-dev \
         node-less \
         npm \
+        pkg-config \        
+        python3-babel \
+        python3-cairo \        
+        python3-dev \
         python3-geoip2 \
         python3-decorator \
         python3-docutils \
@@ -38,6 +46,7 @@ RUN apt-get update && \
         python3-jinja2 \
         python3-libsass \
         python3-mock \
+        python3-freetype \
         python3-gevent \
         python3-greenlet \
         python3-psycopg2 \
@@ -68,21 +77,38 @@ RUN apt-get update && \
         python3-requests \
         python3-zeep \
         python3-vobject \
-        python3-werkzeug \        
+        python3-werkzeug \  
+        python3-cryptography \      
+        python3-openssl \
+        python3-pytzdata \
+        python3-rjsmin \
         xz-utils \
-    && curl -o wkhtmltox.deb -sSL https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.buster_arm64.deb \
-    && echo '43d0db99ab0e6b5f60b465a49c764c50d6b31337 wkhtmltox.deb' | sha1sum -c - \
+        openssl \
+        libc6 \
+        libfreetype6 \
+        libjpeg62-turbo \
+        libpng16-16 \
+        libssl3 \
+        libstdc++6 \
+        libx11-6 \
+        libxcb1 \
+        libxext6 \
+        libxrender1 \
+        zlib1g
+
+RUN curl -o wkhtmltox.deb -sSL https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6.1-3/wkhtmltox_0.12.6.1-3.bookworm_arm64.deb \
     && apt-get install -y --no-install-recommends ./wkhtmltox.deb \
     && rm -rf /var/lib/apt/lists/* wkhtmltox.deb
 
 # Pip install dependencies
-RUN pip3 install pyopenssl==22.1.0
-RUN pip3 install cryptography
-RUN pip3 install babel
-RUN pip3 install pyserial
-RUN pip3 install pytz
-RUN pip3 install pyusb
-RUN pip3 install -U debugpy
+# RUN pip3 install pyopenssl==22.1.0
+# RUN pip3 install cryptography
+# RUN pip3 install babel
+# RUN pip3 install pyserial
+# RUN pip3 install pytz
+# RUN pip3 install pyusb
+# RUN pip3 install rjsmin
+# RUN pip3 install -U debugpy
 
 # install latest postgresql-client
 RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ bullseye-pgdg main' > /etc/apt/sources.list.d/pgdg.list \
@@ -94,7 +120,7 @@ RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ bullseye-pgdg main' > /et
     && gpgconf --kill all \
     && rm -rf "$GNUPGHOME" \
     && apt-get update  \
-    && apt-get install --no-install-recommends -y postgresql-client \
+    && apt-get install --no-install-recommends -y postgresql-client-12 \
     && rm -f /etc/apt/sources.list.d/pgdg.list \
     && rm -rf /var/lib/apt/lists/*
 
@@ -116,9 +142,11 @@ RUN chown -R odoo /work/odoo \
     && chown odoo /etc/odoo/odoo.conf \
     && mkdir -p /mnt/extra-addons \
     && chown -R odoo /mnt/extra-addons \
+    && mkdir -p /mnt/dev-addons \
+    && chown -R odoo /mnt/dev-addons \
     && mkdir -p /var/lib/odoo \
     && chown -R odoo /var/lib/odoo
-VOLUME ["/work", "/var/lib/odoo", "/mnt/extra-addons"]
+VOLUME ["/work", "/var/lib/odoo", "/mnt/extra-addons", "/mnt/dev-addons"]
 
 COPY ./psycopg2/ /mnt/extra-addons/psycopg2/
 RUN chown -R odoo /mnt/extra-addons
@@ -128,7 +156,7 @@ RUN chown -R odoo /mnt/extra-addons
 EXPOSE 8069 8071 8072 3000
 
 # Set the default config file
-ENV ODOO_RC /etc/odoo/odoo.conf
+ENV ODOO_RC=/etc/odoo/odoo.conf
 
 COPY wait-for-psql.py /usr/local/bin/wait-for-psql.py
 
