@@ -15,18 +15,30 @@ if __name__ == '__main__':
 
     args = arg_parser.parse_args()
 
+    timeout = args.timeout
     start_time = time.time()
-    while (time.time() - start_time) < args.timeout:
+    last_error = None
+
+    while True:
         try:
-            conn = psycopg2.connect(user=args.db_user, host=args.db_host, port=args.db_port, password=args.db_password, dbname='postgres')
-            error = ''
+            conn = psycopg2.connect(
+                user=args.db_user,
+                host=args.db_host,
+                port=args.db_port,
+                password=args.db_password,
+                dbname='postgres'
+            )
+            print("Database connection successful!")
+            conn.close()
             break
         except psycopg2.OperationalError as e:
-            error = e
-        else:
-            conn.close()
-        time.sleep(1)
+            last_error = e
+            print(f"Connection failed: {e}. Retrying...")
 
-    if error:
-        print("Database connection failure: %s" % error, file=sys.stderr)
-        sys.exit(1)
+        if (time.time() - start_time) > timeout:
+            print(f"Failed to connect to the database after {timeout} seconds.")
+            if last_error:
+                print(f"Last error: {last_error}")
+            break
+
+        time.sleep(1)
