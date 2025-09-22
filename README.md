@@ -23,5 +23,5 @@ create dockerfile from source code for odoo master(v18 for now) branch on Mac M1
 6、Pull postgres image and run  
 &emsp;&emsp;docker run -d -p 5432:5432 -e POSTGRES_USER=odoo -e POSTGRES_PASSWORD=odoo -e POSTGRES_DB=postgres --name db postgres:13  
 7、Run odoo image  
-&emsp;&emsp;docker run -p 8069:8069 --name odoo18 --link db:db -t odoo18  
+&emsp;&emsp;docker run -p 8069:8069 --name odoo1x --link db:db -t odoo1x  
 8、Open http://localhost:8069 with browser  
