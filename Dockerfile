@@ -82,6 +82,8 @@ RUN apt-get update && \
         python3-openssl \
         python3-pytzdata \
         python3-rjsmin \
+        python3-cbor2 \
+        python3-asn1crypto \
         xz-utils \
         openssl \
         libc6 \
@@ -94,7 +96,8 @@ RUN apt-get update && \
         libxcb1 \
         libxext6 \
         libxrender1 \
-        zlib1g
+        zlib1g \
+        unzip 
 
 RUN curl -o wkhtmltox.deb -sSL https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6.1-3/wkhtmltox_0.12.6.1-3.bookworm_arm64.deb \
     && apt-get install -y --no-install-recommends ./wkhtmltox.deb \
