@@ -10,11 +10,69 @@ ENV LANG=C.UTF-8
 RUN mkdir /work/
 WORKDIR /work/
 
-# Update python version
-RUN apt-get update && \
-    apt-get install -y software-properties-common && \
-    apt-get update && \
-    apt install -y python3.11
+# 1. 安装编译所需的依赖项
+RUN apt-get update && apt-get install -y \
+    software-properties-common \
+    curl \
+    gnupg \
+    build-essential \
+    zlib1g-dev \
+    libncurses5-dev \
+    libgdbm-dev \
+    libnss3-dev \
+    libldap2-dev \
+    libsasl2-dev \    
+    libssl-dev \    
+    libreadline-dev \
+    libffi-dev \
+    libsqlite3-dev \
+    libbz2-dev \
+    liblzma-dev \
+    # 解决可能出现的 _dbm 模块缺失问题 [8](@ref)
+    libgdbm-compat-dev \
+    libdb-dev \
+    libpq-dev \
+    python3-dev \
+    gcc \
+    make && \
+    # 清理缓存以减小镜像体积
+    rm -rf /var/lib/apt/lists/*
+
+# 2. 下载 Python 3.12 源码并编译 [1,2,3](@ref)
+WORKDIR /tmp
+# 请访问 https://www.python.org/downloads/ 确认3.12的最新小版本号
+RUN curl -fsSL https://www.python.org/ftp/python/3.12.6/Python-3.12.6.tgz -o Python-3.12.6.tgz && \
+    tar -xzf Python-3.12.6.tgz && \
+    cd Python-3.12.6 && \
+    # 启用优化，虽然编译慢一些，但性能更好 [4](@ref)
+    ./configure --enable-optimizations && \
+    make -j $(nproc) && \
+    make altinstall && \
+    # 编译安装后清理源码，减小镜像体积
+    cd /tmp && \
+    rm -rf Python-3.12.6*
+
+# 3. 验证安装
+RUN python3.12 --version && pip3.12 --version
+
+# 4. 创建符号链接，替换系统默认命令
+# 备份原有链接（如果存在且非链接文件，则跳过备份）
+RUN cd /usr/bin && \
+    ( [ -L python3 ] && mv python3 python3.bak || true ) && \
+    ln -sf /usr/local/bin/python3.12 python3
+
+RUN cd /usr/bin && \
+    ( [ -L pip3 ] && mv pip3 pip3.bak || true ) && \
+    ln -sf /usr/local/bin/pip3.12 pip3
+
+# 可选：如果希望 `python` 命令也指向 Python 3.12
+RUN cd /usr/bin && \
+    ln -sf /usr/local/bin/python3.12 python
+
+# 5. 验证默认版本是否已切换
+RUN python3 --version && pip3 --version && python --version
+
+RUN pip3.12 install --upgrade pip
 
 # Install vim
 RUN apt-get update && \
@@ -23,67 +81,14 @@ RUN apt-get update && \
 # Install some deps, lessc and less-plugin-clean-css, and wkhtmltopdf
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        build-essential \
         ca-certificates \
         cargo \
-        curl \
         dirmngr \
         fonts-noto-cjk \
         fonts-courier-prime \
-        gnupg \
-        libssl-dev \
-        libffi-dev \
         node-less \
         npm \
         pkg-config \        
-        python3-babel \
-        python3-cairo \        
-        python3-dev \
-        python3-geoip2 \
-        python3-decorator \
-        python3-docutils \
-        python3-idna \
-        python3-jinja2 \
-        python3-libsass \
-        python3-mock \
-        python3-freetype \
-        python3-gevent \
-        python3-greenlet \
-        python3-psycopg2 \
-        python3-num2words \
-        python3-ofxparse \
-        python3-passlib \
-        python3-pdfminer \
-        python3-pillow \
-        python3-pip \
-        python3-phonenumbers \
-        python3-polib \
-        python3-psutil \
-        python3-pydot \
-        python3-pyldap \
-        python3-qrcode \
-        python3-renderpm \
-        python3-setuptools \
-        python3-slugify \
-        python3-vobject \
-        python3-watchdog \
-        python3-xlrd \
-        python3-xlwt \
-        python3-xlsxwriter \
-        python3-pypdf2 \
-        python3-dateutil \
-        python3-stdnum \
-        python3-reportlab \
-        python3-requests \
-        python3-zeep \
-        python3-vobject \
-        python3-werkzeug \  
-        python3-cryptography \      
-        python3-openssl \
-        python3-pytzdata \
-        python3-rjsmin \
-        python3-cbor2 \
-        python3-asn1crypto \
         xz-utils \
         openssl \
         libc6 \
@@ -103,28 +108,14 @@ RUN curl -o wkhtmltox.deb -sSL https://github.com/wkhtmltopdf/packaging/releases
     && apt-get install -y --no-install-recommends ./wkhtmltox.deb \
     && rm -rf /var/lib/apt/lists/* wkhtmltox.deb
 
-# Pip install dependencies
-# RUN pip3 install pyopenssl==22.1.0
-# RUN pip3 install cryptography
-# RUN pip3 install babel
-# RUN pip3 install pyserial
-# RUN pip3 install pytz
-# RUN pip3 install pyusb
-# RUN pip3 install rjsmin
-# RUN pip3 install -U debugpy
+# 添加 PostgreSQL 官方 APT 仓库的 GPG 密钥和源
+RUN curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor -o /usr/share/keyrings/postgresql-archive-keyring.gpg
+# 下面的命令会自动获取系统代号（如 "bookworm"）
+RUN echo "deb [signed-by=/usr/share/keyrings/postgresql-archive-keyring.gpg] http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list
 
-# install latest postgresql-client
-RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ bullseye-pgdg main' > /etc/apt/sources.list.d/pgdg.list \
-    && GNUPGHOME="$(mktemp -d)" \
-    && export GNUPGHOME \
-    && repokey='B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8' \
-    && gpg --batch --keyserver keyserver.ubuntu.com --recv-keys "${repokey}" \
-    && gpg --batch --armor --export "${repokey}" > /etc/apt/trusted.gpg.d/pgdg.gpg.asc \
-    && gpgconf --kill all \
-    && rm -rf "$GNUPGHOME" \
-    && apt-get update  \
-    && apt-get install --no-install-recommends -y postgresql-client-12 \
-    && rm -f /etc/apt/sources.list.d/pgdg.list \
+# 更新并安装 PostgreSQL 客户端-16
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    postgresql-client-16 \
     && rm -rf /var/lib/apt/lists/*
 
 # Install rtlcss (on Debian buster)
@@ -135,6 +126,8 @@ RUN useradd -ms /bin/bash odoo
 
 # Copy source files
 COPY ./odoo/ /work/odoo/
+
+RUN pip3.12 install -r /work/odoo/requirements.txt
 
 # Copy entrypoint script and Odoo configuration file
 COPY ./entrypoint.sh /
